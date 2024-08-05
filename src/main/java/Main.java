@@ -36,7 +36,7 @@ public class Main {
             }else if (choice == 4) {
                 System.out.println("Nhập mã sinh viên muốn xóa:");String idSv = sc.nextLine();
                 //ds.deleteSv(idSv);
-                //1list.deleteStudent(idSv);
+                list.deleteById(idSv);
             }
 
         }while (choice != 0);
