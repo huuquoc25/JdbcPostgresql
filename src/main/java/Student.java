@@ -2,7 +2,7 @@
 
 public class Student{
 
-    private String idSv;
+    private String id;
     private String name;
     private String address;
     private int age;
@@ -10,23 +10,23 @@ public class Student{
     public Student() {
     }
 
-    public Student(String idSv, String name, String address, int age) {
-        this.idSv = idSv;
+    public Student(String id, String name, String address, int age) {
+        this.id = id;
         this.name = name;
         this.address = address;
         this.age = age;
     }
 
-    public Student(String idSv) {
-        this.idSv=idSv;
+    public Student(String id) {
+        this.id = id;
     }
 
-    public String getIdSv() {
-        return idSv;
+    public String getId() {
+        return id;
     }
 
-    public void setIdSv(String idSv) {
-        this.idSv = idSv;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -56,7 +56,7 @@ public class Student{
     @Override
     public String toString() {
         return "Student{" +
-                "idSv='" + idSv + '\'' +
+                "id='" + id + '\'' +
                 ", name='" + name + '\'' +
                 ", address='" + address + '\'' +
                 ", age=" + age +

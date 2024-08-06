@@ -29,7 +29,7 @@ public class StudentManagement {
         return exists;
     }
     public void add(Student student) {
-        if (!existedId(student.getIdSv())) {
+        if (!existedId(student.getId())) {
             Connection con = null;
             PreparedStatement ps = null;
 
@@ -37,7 +37,7 @@ public class StudentManagement {
                 con = PostgreSQLJDBC.con();
                 String query = "INSERT INTO student (id, name, address, age) VALUES (?, ?, ?, ?)";
                 ps = con.prepareStatement(query);
-                ps.setString(1, student.getIdSv());
+                ps.setString(1, student.getId());
                 ps.setString(2, student.getName());
                 ps.setString(3, student.getAddress());
                 ps.setInt(4, student.getAge());
