@@ -2,6 +2,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Scanner;
 
 public class StudentManagement {
     public static boolean existedId(String id) {
@@ -125,13 +126,43 @@ public class StudentManagement {
                 String query = "DELETE FROM student WHERE id = ?";
                 ps = con.prepareStatement(query);
                 ps.setString(1, idSv);
-                rs = ps.executeQuery();
-                if (rs.next()) {
-                    System.out.println("Đã xóa sinh viên");
+
+                int rowsDeleted = ps.executeUpdate();
+                if (rowsDeleted > 0) {
+                    System.out.println("Xóa sinh viên thành công.");
                 } else {
-                    System.out.println("Sinh viên không tồn tại");
+                    System.out.println("Không tìm thấy sinh viên với ID: " + idSv);
                 }
             }
+        } catch (SQLException e) {
+            System.out.println("Lỗi: " + e.getMessage());
+        }
+    }
+
+    public void updateById(String idSv) {
+        Connection con = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        Scanner sc = new Scanner(System.in);
+        System.out.print("Nhập tên muốn update nếu không thay đổi thì nhập lại tên cũ: ");
+        String name = sc.nextLine();
+        System.out.print("Nhập địa chỉ muốn update nếu không thay đổi thì nhập lại tên cũ: ");
+        String address = sc.nextLine();
+        System.out.print("Nhập tuổi muốn update nếu không thay đổi thì nhập lại tên cũ: ");
+        int age = sc.nextInt();
+        try {
+            con = PostgreSQLJDBC.con();
+            if (con != null) {
+                String query = "UPDATE student SET name = ?, address = ?, age = ? WHERE id = ?";
+                ps = con.prepareStatement(query);
+                ps.setString(1, name);
+                ps.setString(2, address);
+                ps.setInt(3, age);
+                ps.setString(4, idSv);
+                ps.executeUpdate();
+                System.out.println("Đã cập nhật thông tin sinh viên");
+            } else System.out.println("Sinh viên không tồn tại");
         } catch (SQLException e) {
             System.out.println("Lỗi: " + e.getMessage());
         } finally {

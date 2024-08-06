@@ -14,6 +14,7 @@ public class Main {
                             +"2. Hiển thị danh sách sinh viên\n"
                             +"3. Hiển thị sinh viên theo mã sinh viên\n"
                             +"4. Xóa sinh viên theo mã sinh viên\n"
+                            +"5. Update thông tin sinh viên\n"
                             +"0. Thoát khỏi trương trình\n"
             );
             choice = sc.nextInt();
@@ -37,7 +38,11 @@ public class Main {
                 System.out.println("Nhập mã sinh viên muốn xóa:");String idSv = sc.nextLine();
                 //ds.deleteSv(idSv);
                 list.deleteById(idSv);
-            }
+            }else if (choice == 5) {
+            System.out.println("Nhập mã sinh viên muốn update:");String idSv = sc.nextLine();
+            //ds.deleteSv(idSv);
+            list.updateById(idSv);
+        }
 
         }while (choice != 0);
     }
