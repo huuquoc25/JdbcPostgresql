@@ -74,39 +74,77 @@ public class StudentManagement {
     }
 
     public void displayListStudent() {
-        String query = "SELECT * FROM student";
-        try (Connection con = PostgreSQLJDBC.getInstance().getConnection();
-             PreparedStatement ps = con.prepareStatement(query);
-             ResultSet rs = ps.executeQuery()) {
+        Connection con = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            con = PostgreSQLJDBC.getInstance().getConnection();
+            PostgreSQLJDBC.beginTransaction(con); // Bắt đầu transaction
+
+            String query = "SELECT * FROM student";
+            ps = con.prepareStatement(query);
+            rs = ps.executeQuery();
             while (rs.next()) {
                 logger.info(toString(rs));
             }
+
+            PostgreSQLJDBC.commitTransaction(con); // Commit transaction
         } catch (SQLException e) {
             logger.error("Lỗi: ", e);
+            try {
+                if (con != null) {
+                    PostgreSQLJDBC.rollbackTransaction(con); // Rollback transaction nếu có lỗi
+                }
+            } catch (SQLException rollbackEx) {
+                logger.error("Lỗi khi rollback: ", rollbackEx);
+            }
+        } finally {
+            PostgreSQLJDBC.closeResources(con, ps, rs); // Đóng tài nguyên
         }
     }
 
     public void displayById(String idSv) {
-        String query = "SELECT * FROM student WHERE id = ?";
-        try (Connection con = PostgreSQLJDBC.getInstance().getConnection();
-             PreparedStatement ps = con.prepareStatement(query)) {
+        Connection con = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            con = PostgreSQLJDBC.getInstance().getConnection();
+            PostgreSQLJDBC.beginTransaction(con); // Bắt đầu transaction
+
+            String query = "SELECT * FROM student WHERE id = ?";
+            ps = con.prepareStatement(query);
             ps.setString(1, idSv);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    logger.info(toString(rs));
-                } else {
-                    logger.warn("Sinh viên không tồn tại.");
-                }
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                logger.info(toString(rs));
+            } else {
+                logger.warn("Sinh viên không tồn tại.");
             }
+
+            PostgreSQLJDBC.commitTransaction(con); // Commit transaction
         } catch (SQLException e) {
             logger.error("Lỗi: ", e);
+            try {
+                if (con != null) {
+                    PostgreSQLJDBC.rollbackTransaction(con); // Rollback transaction nếu có lỗi
+                }
+            } catch (SQLException rollbackEx) {
+                logger.error("Lỗi khi rollback: ", rollbackEx);
+            }
+        } finally {
+            PostgreSQLJDBC.closeResources(con, ps, rs); // Đóng tài nguyên
         }
     }
 
     public void deleteById(String idSv) {
-        String query = "DELETE FROM student WHERE id = ?";
-        try (Connection con = PostgreSQLJDBC.getInstance().getConnection();
-             PreparedStatement ps = con.prepareStatement(query)) {
+        Connection con = null;
+        PreparedStatement ps = null;
+        try {
+            con = PostgreSQLJDBC.getInstance().getConnection();
+            PostgreSQLJDBC.beginTransaction(con); // Bắt đầu transaction
+
+            String query = "DELETE FROM student WHERE id = ?";
+            ps = con.prepareStatement(query);
             ps.setString(1, idSv);
             int rowsDeleted = ps.executeUpdate();
             if (rowsDeleted > 0) {
@@ -114,8 +152,19 @@ public class StudentManagement {
             } else {
                 logger.warn("Không tìm thấy sinh viên với ID: " + idSv);
             }
+
+            PostgreSQLJDBC.commitTransaction(con); // Commit transaction
         } catch (SQLException e) {
             logger.error("Lỗi: ", e);
+            try {
+                if (con != null) {
+                    PostgreSQLJDBC.rollbackTransaction(con); // Rollback transaction nếu có lỗi
+                }
+            } catch (SQLException rollbackEx) {
+                logger.error("Lỗi khi rollback: ", rollbackEx);
+            }
+        } finally {
+            PostgreSQLJDBC.closeResources(con, ps, null); // Đóng tài nguyên
         }
     }
 
@@ -128,9 +177,14 @@ public class StudentManagement {
         System.out.print("Nhập tuổi muốn update nếu không thay đổi thì nhập lại tuổi cũ: ");
         int age = sc.nextInt();
 
-        String query = "UPDATE student SET name = ?, address = ?, age = ? WHERE id = ?";
-        try (Connection con = PostgreSQLJDBC.getInstance().getConnection();
-             PreparedStatement ps = con.prepareStatement(query)) {
+        Connection con = null;
+        PreparedStatement ps = null;
+        try {
+            con = PostgreSQLJDBC.getInstance().getConnection();
+            PostgreSQLJDBC.beginTransaction(con); // Bắt đầu transaction
+
+            String query = "UPDATE student SET name = ?, address = ?, age = ? WHERE id = ?";
+            ps = con.prepareStatement(query);
             ps.setString(1, name);
             ps.setString(2, address);
             ps.setInt(3, age);
@@ -141,8 +195,19 @@ public class StudentManagement {
             } else {
                 logger.warn("Sinh viên không tồn tại.");
             }
+
+            PostgreSQLJDBC.commitTransaction(con); // Commit transaction
         } catch (SQLException e) {
             logger.error("Lỗi: ", e);
+            try {
+                if (con != null) {
+                    PostgreSQLJDBC.rollbackTransaction(con); // Rollback transaction nếu có lỗi
+                }
+            } catch (SQLException rollbackEx) {
+                logger.error("Lỗi khi rollback: ", rollbackEx);
+            }
+        } finally {
+            PostgreSQLJDBC.closeResources(con, ps, null); // Đóng tài nguyên
         }
     }
 }
