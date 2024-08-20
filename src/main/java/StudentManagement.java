@@ -1,3 +1,6 @@
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -5,36 +8,30 @@ import java.sql.SQLException;
 import java.util.Scanner;
 
 public class StudentManagement {
-    public static boolean existedId(String id) {
-        Connection con = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-        boolean exists = false;
+    private static final Logger logger = LoggerFactory.getLogger(StudentManagement.class);
 
-        try {
-            con = PostgreSQLJDBC.con();
-            if (con != null) {
-                String query = "SELECT * FROM student WHERE id = ?";
-                ps = con.prepareStatement(query);
-                ps.setString(1, id);
-                rs = ps.executeQuery();
-                exists = rs.next();
+    public static boolean existedId(String id) {
+        String query = "SELECT 1 FROM student WHERE id = ?";
+        try (Connection con = PostgreSQLJDBC.getInstance().getConnection();
+             PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
             }
         } catch (SQLException e) {
-            System.out.println("Lỗi kiểm tra tồn tại: " + e.getMessage());
-        } finally {
-            PostgreSQLJDBC.closeResources(con, ps, rs);
+            logger.error("Lỗi kiểm tra tồn tại: ", e);
         }
-
-        return exists;
+        return false;
     }
-    public void add(Student student) {
-        if (!existedId(student.getId())) {
-            Connection con = null;
-            PreparedStatement ps = null;
 
-            try {
-                con = PostgreSQLJDBC.con();
+    public void add(Student student) {
+        Connection con = null;
+        PreparedStatement ps = null;
+        try {
+            con = PostgreSQLJDBC.getInstance().getConnection();
+            PostgreSQLJDBC.beginTransaction(con); // Bắt đầu transaction
+
+            if (!existedId(student.getId())) {
                 String query = "INSERT INTO student (id, name, address, age) VALUES (?, ?, ?, ?)";
                 ps = con.prepareStatement(query);
                 ps.setString(1, student.getId());
@@ -42,131 +39,110 @@ public class StudentManagement {
                 ps.setString(3, student.getAddress());
                 ps.setInt(4, student.getAge());
                 ps.executeUpdate();
-                System.out.println("Thêm sinh viên thành công.");
-            } catch (SQLException e) {
-                System.out.println("lỗi: " + e.getMessage());
-            } finally {
-                PostgreSQLJDBC.closeResources(con, ps, null);
+                logger.info("Thêm sinh viên thành công.");
 
+                PostgreSQLJDBC.commitTransaction(con); // Commit transaction
+            } else {
+                logger.warn("Sinh viên đã tồn tại.");
+                PostgreSQLJDBC.rollbackTransaction(con); // Rollback transaction nếu sinh viên đã tồn tại
             }
+        } catch (SQLException e) {
+            logger.error("Lỗi: ", e);
+            try {
+                if (con != null) {
+                    PostgreSQLJDBC.rollbackTransaction(con); // Rollback transaction nếu có lỗi
+                }
+            } catch (SQLException rollbackEx) {
+                logger.error("Lỗi khi rollback: ", rollbackEx);
+            }
+        } finally {
+            PostgreSQLJDBC.closeResources(con, ps, null); // Đóng tài nguyên
         }
-        else {
-            System.out.println("Sinh viên đã tồn tại");
-        }
-
     }
+
     public String toString(ResultSet rs) {
         try {
             String studentId = rs.getString("id");
             String name = rs.getString("name");
             String address = rs.getString("address");
             int age = rs.getInt("age");
-            ;
             return studentId + "\t" + name + "\t" + address + "\t" + age;
         } catch (SQLException e) {
-            System.out.println("Lỗi: " + e.getMessage());
+            logger.error("Lỗi: ", e);
         }
         return "";
     }
 
     public void displayListStudent() {
-        Connection con = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-
-        try {
-            con = PostgreSQLJDBC.con();
-            if (con != null) {
-                String query = "SELECT * FROM student";
-                ps = con.prepareStatement(query);
-                rs = ps.executeQuery();
-                while (rs.next()) {
-                    System.out.println(toString(rs));
-                }
+        String query = "SELECT * FROM student";
+        try (Connection con = PostgreSQLJDBC.getInstance().getConnection();
+             PreparedStatement ps = con.prepareStatement(query);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                logger.info(toString(rs));
             }
         } catch (SQLException e) {
-            System.out.println("Lỗi: " + e.getMessage());
-        } finally {
-            PostgreSQLJDBC.closeResources(con, ps, rs);
+            logger.error("Lỗi: ", e);
         }
     }
 
     public void displayById(String idSv) {
-        Connection con = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-
-        try {
-            con = PostgreSQLJDBC.con();
-            if (con != null) {
-                String query = "SELECT * FROM student WHERE id = ?";
-                ps = con.prepareStatement(query);
-                ps.setString(1, idSv);
-                rs = ps.executeQuery();
+        String query = "SELECT * FROM student WHERE id = ?";
+        try (Connection con = PostgreSQLJDBC.getInstance().getConnection();
+             PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, idSv);
+            try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    System.out.println(toString(rs));
+                    logger.info(toString(rs));
                 } else {
-                    System.out.println("Sinh viên không tồn tại");
+                    logger.warn("Sinh viên không tồn tại.");
                 }
             }
         } catch (SQLException e) {
-            System.out.println("Lỗi: " + e.getMessage());
-        } finally {
-            PostgreSQLJDBC.closeResources(con, ps, rs);
+            logger.error("Lỗi: ", e);
         }
     }
+
     public void deleteById(String idSv) {
-        Connection con = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-
-        try {
-            con = PostgreSQLJDBC.con();
-            if (con != null) {
-                String query = "DELETE FROM student WHERE id = ?";
-                ps = con.prepareStatement(query);
-                ps.setString(1, idSv);
-
-                int rowsDeleted = ps.executeUpdate();
-                if (rowsDeleted > 0) {
-                    System.out.println("Xóa sinh viên thành công.");
-                } else {
-                    System.out.println("Không tìm thấy sinh viên với ID: " + idSv);
-                }
+        String query = "DELETE FROM student WHERE id = ?";
+        try (Connection con = PostgreSQLJDBC.getInstance().getConnection();
+             PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, idSv);
+            int rowsDeleted = ps.executeUpdate();
+            if (rowsDeleted > 0) {
+                logger.info("Xóa sinh viên thành công.");
+            } else {
+                logger.warn("Không tìm thấy sinh viên với ID: " + idSv);
             }
         } catch (SQLException e) {
-            System.out.println("Lỗi: " + e.getMessage());
+            logger.error("Lỗi: ", e);
         }
     }
 
     public void updateById(String idSv) {
-        Connection con = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-
         Scanner sc = new Scanner(System.in);
         System.out.print("Nhập tên muốn update nếu không thay đổi thì nhập lại tên cũ: ");
         String name = sc.nextLine();
-        System.out.print("Nhập địa chỉ muốn update nếu không thay đổi thì nhập lại tên cũ: ");
+        System.out.print("Nhập địa chỉ muốn update nếu không thay đổi thì nhập lại địa chỉ cũ: ");
         String address = sc.nextLine();
-        System.out.print("Nhập tuổi muốn update nếu không thay đổi thì nhập lại tên cũ: ");
+        System.out.print("Nhập tuổi muốn update nếu không thay đổi thì nhập lại tuổi cũ: ");
         int age = sc.nextInt();
-        try {
-            con = PostgreSQLJDBC.con();
-            if (con != null) {
-                String query = "UPDATE student SET name = ?, address = ?, age = ? WHERE id = ?";
-                ps = con.prepareStatement(query);
-                ps.setString(1, name);
-                ps.setString(2, address);
-                ps.setInt(3, age);
-                ps.setString(4, idSv);
-                ps.executeUpdate();
-                System.out.println("Đã cập nhật thông tin sinh viên");
-            } else System.out.println("Sinh viên không tồn tại");
+
+        String query = "UPDATE student SET name = ?, address = ?, age = ? WHERE id = ?";
+        try (Connection con = PostgreSQLJDBC.getInstance().getConnection();
+             PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, name);
+            ps.setString(2, address);
+            ps.setInt(3, age);
+            ps.setString(4, idSv);
+            int rowsUpdated = ps.executeUpdate();
+            if (rowsUpdated > 0) {
+                logger.info("Đã cập nhật thông tin sinh viên.");
+            } else {
+                logger.warn("Sinh viên không tồn tại.");
+            }
         } catch (SQLException e) {
-            System.out.println("Lỗi: " + e.getMessage());
-        } finally {
-            PostgreSQLJDBC.closeResources(con, ps, rs);
+            logger.error("Lỗi: ", e);
         }
     }
 }
